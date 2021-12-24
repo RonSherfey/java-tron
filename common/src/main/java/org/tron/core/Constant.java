@@ -60,6 +60,7 @@ public class Constant {
   public static final String LOCAL_WITNESS_ACCOUNT_ADDRESS = "localWitnessAccountAddress";
   public static final String LOCAL_WITNESS_KEYSTORE = "localwitnesskeystore";
   public static final String VM_SUPPORT_CONSTANT = "vm.supportConstant";
+  public static final String VM_MAX_ENERGY_LIMIT_FOR_CONSTANT = "vm.maxEnergyLimitForConstant";
   public static final String VM_MIN_TIME_RATIO = "vm.minTimeRatio";
   public static final String VM_MAX_TIME_RATIO = "vm.maxTimeRatio";
   public static final String VM_LONG_RUNNING_TIME = "vm.longRunningTime";
@@ -94,6 +95,15 @@ public class Constant {
   public static final String NODE_HTTP_FULLNODE_ENABLE = "node.http.fullNodeEnable";
   public static final String NODE_HTTP_SOLIDITY_ENABLE = "node.http.solidityEnable";
   public static final String NODE_HTTP_PBFT_PORT = "node.http.PBFTPort";
+
+  public static final String NODE_JSONRPC_HTTP_FULLNODE_ENABLE = "node.jsonrpc.httpFullNodeEnable";
+  public static final String NODE_JSONRPC_HTTP_FULLNODE_PORT = "node.jsonrpc.httpFullNodePort";
+  public static final String NODE_JSONRPC_HTTP_SOLIDITY_ENABLE = "node.jsonrpc.httpSolidityEnable";
+  public static final String NODE_JSONRPC_HTTP_SOLIDITY_PORT = "node.jsonrpc.httpSolidityPort";
+  public static final String NODE_JSONRPC_HTTP_PBFT_ENABLE = "node.jsonrpc.httpPBFTEnable";
+  public static final String NODE_JSONRPC_HTTP_PBFT_PORT = "node.jsonrpc.httpPBFTPort";
+
+  public static final String NODE_DISABLED_API_LIST = "node.disabledApi";
 
   public static final String NODE_RPC_THREAD = "node.rpc.thread";
   public static final String NODE_SOLIDITY_THREADS = "node.solidity.threads";
@@ -168,6 +178,8 @@ public class Constant {
   public static final String TRX_EXPIRATION_TIME_IN_MILLIS_SECONDS = "trx.expiration.timeInMilliseconds";
 
   public static final String NODE_RPC_MIN_EFFECTIVE_CONNECTION = "node.rpc.minEffectiveConnection";
+
+  public static final String NODE_RPC_TRX_CACHE_ENABLE = "node.rpc.trxCacheEnable";
 
   public static final String ENERGY_LIMIT_BLOCK_NUM = "enery.limit.block.num";
 
@@ -259,16 +271,16 @@ public class Constant {
   public static final String COMMITTEE_ALLOW_PBFT = "committee.allowPBFT";
   public static final String NODE_AGREE_NODE_COUNT = "node.agreeNodeCount";
 
-  public static final String COMMITTEE_ALLOW_TVM_STAKE = "committee.allowTvmStake";
-
-  public static final String COMMITTEE_ALLOW_TVM_ASSETISSUE = "committee.allowTvmAssetIssue";
-
   public static final String COMMITTEE_ALLOW_TRANSACTION_FEE_POOL = "committee.allowTransactionFeePool";
   public static final String COMMITTEE_ALLOW_BLACK_HOLE_OPTIMIZATION = "committee.allowBlackHoleOptimization";
   public static final String COMMITTEE_ALLOW_NEW_RESOURCE_MODEL = "committee.allowNewResourceModel";
   public static final String COMMITTEE_ALLOW_RECEIPTS_MERKLE_ROOT = "committee.allowReceiptsMerkleRoot";
 
   public static final String COMMITTEE_ALLOW_TVM_FREEZE = "committee.allowTvmFreeze";
+  public static final String COMMITTEE_ALLOW_TVM_VOTE = "committee.allowTvmVote";
+
+  public static final String COMMITTEE_ALLOW_TVM_LONDON = "committee.allowTvmLondon";
+  public static final String COMMITTEE_ALLOW_TVM_COMPATIBLE_EVM = "committee.allowTvmCompatibleEvm";
 
   public static final String METRICS_STORAGE_ENABLE = "node.metrics.storageEnable";
   public static final String METRICS_INFLUXDB_IP = "node.metrics.influxdb.ip";
@@ -279,6 +291,8 @@ public class Constant {
   public static final String HISTORY_BALANCE_LOOKUP = "storage.balance.history.lookup";
   public static final String OPEN_PRINT_LOG = "node.openPrintLog";
   public static final String OPEN_TRANSACTION_SORT = "node.openTransactionSort";
+
+  public static final String  ALLOW_ACCOUNT_ASSET_OPTIMIZATION = "committee.allowAccountAssetOptimization";
 
   public static final String LOCAL_HOST = "127.0.0.1";
 }

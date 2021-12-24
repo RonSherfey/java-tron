@@ -64,6 +64,8 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   private static final byte[] WITNESS_STANDBY_ALLOWANCE = "WITNESS_STANDBY_ALLOWANCE".getBytes();
   private static final byte[] ENERGY_FEE = "ENERGY_FEE".getBytes();
+  private static final long DEFAULT_ENERGY_FEE = 100L;
+  public static final String DEFAULT_ENERGY_PRICE_HISTORY = "0:" + DEFAULT_ENERGY_FEE;
   private static final byte[] MAX_CPU_TIME_OF_ONE_TX = "MAX_CPU_TIME_OF_ONE_TX".getBytes();
   //abandon
   private static final byte[] CREATE_ACCOUNT_FEE = "CREATE_ACCOUNT_FEE".getBytes();
@@ -117,6 +119,8 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   private static final byte[] TOKEN_ID_NUM = "TOKEN_ID_NUM".getBytes();
   //Used only for token updates, once，value is {0,1}
   private static final byte[] TOKEN_UPDATE_DONE = "TOKEN_UPDATE_DONE".getBytes();
+  //Used only for abi moves, once，value is {0,1}
+  private static final byte[] ABI_MOVE_DONE = "ABI_MOVE_DONE".getBytes();
   //This value is only allowed to be 0, 1, -1
   private static final byte[] ALLOW_TVM_TRANSFER_TRC10 = "ALLOW_TVM_TRANSFER_TRC10".getBytes();
   //If the parameter is larger than 0, allow ZKsnark Transaction
@@ -125,8 +129,6 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
       "ALLOW_SHIELDED_TRC20_TRANSACTION"
           .getBytes();
   private static final byte[] ALLOW_TVM_ISTANBUL = "ALLOW_TVM_ISTANBUL".getBytes();
-  private static final byte[] ALLOW_TVM_STAKE = "ALLOW_TVM_STAKE".getBytes();
-  private static final byte[] ALLOW_TVM_ASSET_ISSUE = "ALLOW_TVM_ASSET_ISSUE".getBytes();
   private static final byte[] ALLOW_TVM_CONSTANTINOPLE = "ALLOW_TVM_CONSTANTINOPLE".getBytes();
   private static final byte[] ALLOW_TVM_SOLIDITY_059 = "ALLOW_TVM_SOLIDITY_059".getBytes();
   private static final byte[] FORBID_TRANSFER_TO_CONTRACT = "FORBID_TRANSFER_TO_CONTRACT"
@@ -155,6 +157,19 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   private static final byte[] ALLOW_BLACKHOLE_OPTIMIZATION = "ALLOW_BLACKHOLE_OPTIMIZATION".getBytes();
   private static final byte[] ALLOW_NEW_RESOURCE_MODEL = "ALLOW_NEW_RESOURCE_MODEL".getBytes();
   private static final byte[] ALLOW_TVM_FREEZE = "ALLOW_TVM_FREEZE".getBytes();
+  private static final byte[] ALLOW_TVM_VOTE = "ALLOW_TVM_VOTE".getBytes();
+  private static final byte[] ALLOW_TVM_LONDON = "ALLOW_TVM_LONDON".getBytes();
+  private static final byte[] ALLOW_TVM_COMPATIBLE_EVM = "ALLOW_TVM_COMPATIBLE_EVM".getBytes();
+  private static final byte[] NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE =
+      "NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE".getBytes();
+  //This value is only allowed to be 1
+  private static final byte[] ALLOW_ACCOUNT_ASSET_OPTIMIZATION =
+      "ALLOW_ACCOUNT_ASSET_OPTIMIZATION".getBytes();
+  private static final byte[] ENERGY_PRICE_HISTORY = "ENERGY_PRICE_HISTORY".getBytes();
+  private static final byte[] ENERGY_PRICE_HISTORY_DONE = "ENERGY_PRICE_HISTORY_DONE".getBytes();
+  private static final byte[] SET_BLACKHOLE_ACCOUNT_PERMISSION =
+      "SET_BLACKHOLE_ACCOUNT_PERMISSION".getBytes();
+
 
   @Autowired
   private DynamicPropertiesStore(@Value("properties") String dbName) {
@@ -231,6 +246,12 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
       this.getTokenUpdateDone();
     } catch (IllegalArgumentException e) {
       this.saveTokenUpdateDone(0);
+    }
+
+    try {
+      this.getAbiMoveDone();
+    } catch (IllegalArgumentException e) {
+      this.saveAbiMoveDone(0);
     }
 
     try {
@@ -371,7 +392,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     try {
       this.getEnergyFee();
     } catch (IllegalArgumentException e) {
-      this.saveEnergyFee(100L);// 100 sun per energy
+      this.saveEnergyFee(DEFAULT_ENERGY_FEE); // 100 sun per energy
     }
 
     try {
@@ -628,20 +649,6 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     }
 
     try {
-      this.getAllowTvmStake();
-    } catch (IllegalArgumentException e) {
-      this.saveAllowTvmStake(
-          CommonParameter.getInstance().getAllowTvmStake());
-    }
-
-    try {
-      this.getAllowTvmAssetIssue();
-    } catch (IllegalArgumentException e) {
-      this.saveAllowTvmAssetIssue(
-          CommonParameter.getInstance().getAllowTvmAssetIssue());
-    }
-
-    try {
       this.getBlockFilledSlots();
     } catch (IllegalArgumentException e) {
       int[] blockFilledSlots = new int[getBlockFilledSlotsNumber()];
@@ -747,10 +754,55 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     try {
       this.getAllowTvmFreeze();
     } catch (IllegalArgumentException e) {
-      this.saveAllowTvmFreeze(
-          CommonParameter.getInstance().getAllowTvmFreeze());
+      this.saveAllowTvmFreeze(CommonParameter.getInstance().getAllowTvmFreeze());
     }
 
+    try {
+      this.getAllowTvmVote();
+    } catch (IllegalArgumentException e) {
+      this.saveAllowTvmVote(CommonParameter.getInstance().getAllowTvmVote());
+      if (CommonParameter.getInstance().getAllowTvmVote() == 1) {
+        this.put(NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE,
+            new BytesCapsule(ByteArray.fromLong(getCurrentCycleNumber())));
+      }
+    }
+
+    try {
+      this.getAllowTvmLondon();
+    } catch (IllegalArgumentException e) {
+      this.saveAllowTvmLondon(CommonParameter.getInstance().getAllowTvmLondon());
+    }
+
+    try {
+      this.getAllowTvmCompatibleEvm();
+    } catch (IllegalArgumentException e) {
+      this.saveAllowTvmCompatibleEvm(CommonParameter.getInstance().getAllowTvmCompatibleEvm());
+    }
+
+    try {
+      this.getAllowAccountAssetOptimization();
+    } catch (IllegalArgumentException e) {
+      this.setAllowAccountAssetOptimization(CommonParameter
+              .getInstance().getAllowAccountAssetOptimization());
+    }
+
+    try {
+      this.getEnergyPriceHistoryDone();
+    } catch (IllegalArgumentException e) {
+      this.saveEnergyPriceHistoryDone(0);
+    }
+
+    try {
+      this.getEnergyPriceHistory();
+    } catch (IllegalArgumentException e) {
+      this.saveEnergyPriceHistory(DEFAULT_ENERGY_PRICE_HISTORY);
+    }
+
+    try {
+      this.getSetBlackholeAccountPermission();
+    } catch (IllegalArgumentException e) {
+      this.saveSetBlackholePermission(0);
+    }
   }
 
   public String intArrayToString(int[] a) {
@@ -794,6 +846,19 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
         .map(ByteArray::toLong)
         .orElseThrow(
             () -> new IllegalArgumentException("not found TOKEN_UPDATE_DONE"));
+  }
+
+  public void saveAbiMoveDone(long num) {
+    this.put(ABI_MOVE_DONE,
+        new BytesCapsule(ByteArray.fromLong(num)));
+  }
+
+  public long getAbiMoveDone() {
+    return Optional.ofNullable(getUnchecked(ABI_MOVE_DONE))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found ABI_MOVE_DONE"));
   }
 
   public void saveBlockFilledSlotsIndex(int blockFilledSlotsIndex) {
@@ -1819,34 +1884,6 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
             () -> new IllegalArgumentException(msg));
   }
 
-  public void saveAllowTvmStake(long allowTvmStake) {
-    this.put(DynamicPropertiesStore.ALLOW_TVM_STAKE,
-        new BytesCapsule(ByteArray.fromLong(allowTvmStake)));
-  }
-
-  public void saveAllowTvmAssetIssue(long allowTvmAssetIssue) {
-    this.put(DynamicPropertiesStore.ALLOW_TVM_ASSET_ISSUE,
-        new BytesCapsule(ByteArray.fromLong(allowTvmAssetIssue)));
-  }
-
-  public long getAllowTvmStake() {
-    String msg = "not found ALLOW_TVM_STAKE";
-    return Optional.ofNullable(getUnchecked(ALLOW_TVM_STAKE))
-        .map(BytesCapsule::getData)
-        .map(ByteArray::toLong)
-        .orElseThrow(
-            () -> new IllegalArgumentException(msg));
-  }
-
-  public long getAllowTvmAssetIssue() {
-    String msg = "not found ALLOW_TVM_ASSETISSUE";
-    return Optional.ofNullable(getUnchecked(ALLOW_TVM_ASSET_ISSUE))
-        .map(BytesCapsule::getData)
-        .map(ByteArray::toLong)
-        .orElseThrow(
-            () -> new IllegalArgumentException(msg));
-  }
-
   public boolean supportShieldedTransaction() {
     return getAllowShieldedTransaction() == 1L;
   }
@@ -2213,6 +2250,10 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     return getAllowNewResourceModel() == 1L;
   }
 
+  public boolean supportAllowAccountAssetOptimization() {
+    return getAllowAccountAssetOptimization() == 1L;
+  }
+
   public void saveAllowNewResourceModel(long value) {
     this.put(ALLOW_NEW_RESOURCE_MODEL, new BytesCapsule(ByteArray.fromLong(value)));
   }
@@ -2237,6 +2278,115 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
         .map(ByteArray::toLong)
         .orElseThrow(
             () -> new IllegalArgumentException(msg));
+  }
+
+  public void saveAllowTvmVote(long allowTvmVote) {
+    this.put(DynamicPropertiesStore.ALLOW_TVM_VOTE,
+        new BytesCapsule(ByteArray.fromLong(allowTvmVote)));
+  }
+
+  public long getAllowTvmVote() {
+    String msg = "not found ALLOW_TVM_VOTE";
+    return Optional.ofNullable(getUnchecked(ALLOW_TVM_VOTE))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException(msg));
+  }
+
+  public void saveAllowTvmLondon(long allowTvmLondon) {
+    this.put(DynamicPropertiesStore.ALLOW_TVM_LONDON,
+        new BytesCapsule(ByteArray.fromLong(allowTvmLondon)));
+  }
+
+  public long getAllowTvmLondon() {
+    String msg = "not found ALLOW_TVM_LONDON";
+    return Optional.ofNullable(getUnchecked(ALLOW_TVM_LONDON))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException(msg));
+  }
+
+  public void saveAllowTvmCompatibleEvm(long allowTvmCompatibleEvm) {
+    this.put(DynamicPropertiesStore.ALLOW_TVM_COMPATIBLE_EVM,
+        new BytesCapsule(ByteArray.fromLong(allowTvmCompatibleEvm)));
+  }
+
+  public long getAllowTvmCompatibleEvm() {
+    String msg = "not found ALLOW_TVM_COMPATIBLE_EVM";
+    return Optional.ofNullable(getUnchecked(ALLOW_TVM_COMPATIBLE_EVM))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException(msg));
+  }
+
+  public boolean useNewRewardAlgorithm() {
+    return getAllowTvmVote() == 1;
+  }
+
+  public void saveNewRewardAlgorithmEffectiveCycle() {
+    if (getNewRewardAlgorithmEffectiveCycle() == Long.MAX_VALUE) {
+      long currentCycle = getCurrentCycleNumber();
+      this.put(NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE,
+          new BytesCapsule(ByteArray.fromLong(currentCycle + 1)));
+    }
+  }
+
+  public long getNewRewardAlgorithmEffectiveCycle() {
+    return Optional.ofNullable(getUnchecked(NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElse(Long.MAX_VALUE);
+  }
+
+  // 1: enable
+  public long getAllowAccountAssetOptimization() {
+    return Optional.ofNullable(getUnchecked(ALLOW_ACCOUNT_ASSET_OPTIMIZATION))
+            .map(BytesCapsule::getData)
+            .map(ByteArray::toLong)
+            .orElseThrow(() -> new IllegalArgumentException("not found ALLOW_ACCOUNT_ASSET_OPTIMIZATION"));
+  }
+
+  public void setAllowAccountAssetOptimization(long value) {
+    this.put(ALLOW_ACCOUNT_ASSET_OPTIMIZATION, new BytesCapsule(ByteArray.fromLong(value)));
+  }
+
+  public void saveEnergyPriceHistoryDone(long value) {
+    this.put(ENERGY_PRICE_HISTORY_DONE,
+        new BytesCapsule(ByteArray.fromLong(value)));
+  }
+
+  public long getEnergyPriceHistoryDone() {
+    return Optional.ofNullable(getUnchecked(ENERGY_PRICE_HISTORY_DONE))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found ENERGY_PRICE_HISTORY_DONE"));
+  }
+
+  public String getEnergyPriceHistory() {
+    return Optional.ofNullable(getUnchecked(ENERGY_PRICE_HISTORY))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toStr)
+        .orElseThrow(() -> new IllegalArgumentException("not found ENERGY_PRICE_HISTORY"));
+  }
+
+  public void saveEnergyPriceHistory(String value) {
+    this.put(ENERGY_PRICE_HISTORY, new BytesCapsule(ByteArray.fromString(value)));
+  }
+
+  public long getSetBlackholeAccountPermission() {
+    return Optional.of(getUnchecked(SET_BLACKHOLE_ACCOUNT_PERMISSION))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found SET_BLACKHOLE_ACCOUNT_PERMISSION"));
+  }
+
+  public void saveSetBlackholePermission(long value) {
+    this.put(SET_BLACKHOLE_ACCOUNT_PERMISSION, new BytesCapsule(ByteArray.fromLong(value)));
   }
 
   private static class DynamicResourceProperties {
@@ -2267,6 +2417,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     private static final byte[] ADAPTIVE_RESOURCE_LIMIT_TARGET_RATIO =
         "ADAPTIVE_RESOURCE_LIMIT_TARGET_RATIO"
             .getBytes();
+
   }
 
 }

@@ -75,7 +75,7 @@ public class ClearAbi004 {
     blockingStubSolidity = WalletSolidityGrpc.newBlockingStub(channelSolidity);
   }
 
-  @Test(enabled = false, description = "Clear a account address")
+  @Test(enabled = true, description = "Clear a account address")
   public void testClearAbi() {
     Assert.assertTrue(PublicMethed
         .sendcoin(contractExcAddress, 10000000000L, testNetAccountAddress, testNetAccountKey,
@@ -91,7 +91,7 @@ public class ClearAbi004 {
             containsString("CONTRACT_VALIDATE_ERROR"));
     Assert
         .assertThat(transactionExtention.getResult().getMessage().toStringUtf8(),
-            containsString("contract validate error : Contract not exists"));
+            containsString("Contract validate error : Contract not exists"));
 
 
   }

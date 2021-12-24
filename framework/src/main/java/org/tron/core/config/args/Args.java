@@ -132,6 +132,9 @@ public class Args extends CommonParameter {
     PARAMETER.fullNodeHttpPort = 0;
     PARAMETER.solidityHttpPort = 0;
     PARAMETER.pBFTHttpPort = 0;
+    PARAMETER.jsonRpcHttpFullNodePort = 0;
+    PARAMETER.jsonRpcHttpSolidityPort = 0;
+    PARAMETER.jsonRpcHttpPBFTPort = 0;
     PARAMETER.maintenanceTimeInterval = 0;
     PARAMETER.proposalExpireTime = 0;
     PARAMETER.checkFrozenTime = 1;
@@ -173,6 +176,9 @@ public class Args extends CommonParameter {
     PARAMETER.changedDelegation = 0;
     PARAMETER.fullNodeHttpEnable = true;
     PARAMETER.solidityNodeHttpEnable = true;
+    PARAMETER.jsonRpcHttpFullNodeEnable = false;
+    PARAMETER.jsonRpcHttpSolidityNodeEnable = false;
+    PARAMETER.jsonRpcHttpPBFTNodeEnable = false;
     PARAMETER.nodeMetricsEnable = false;
     PARAMETER.metricsStorageEnable = false;
     PARAMETER.agreeNodeCount = MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
@@ -183,11 +189,15 @@ public class Args extends CommonParameter {
     PARAMETER.allowBlackHoleOptimization = 0;
     PARAMETER.allowNewResourceModel = 0;
     PARAMETER.allowTvmIstanbul = 0;
-    PARAMETER.allowTvmStake = 0;
-    PARAMETER.allowTvmAssetIssue = 0;
+    PARAMETER.allowTvmFreeze = 0;
+    PARAMETER.allowTvmVote = 0;
+    PARAMETER.allowTvmLondon = 0;
+    PARAMETER.allowTvmCompatibleEvm = 0;
     PARAMETER.historyBalanceLookup = false;
     PARAMETER.openPrintLog = true;
     PARAMETER.openTransactionSort = false;
+    PARAMETER.allowAccountAssetOptimization = 0;
+    PARAMETER.disabledApiList = Collections.emptyList();
   }
 
   /**
@@ -281,12 +291,32 @@ public class Args extends CommonParameter {
       PARAMETER.supportConstant = config.getBoolean(Constant.VM_SUPPORT_CONSTANT);
     }
 
+    if (config.hasPath(Constant.VM_MAX_ENERGY_LIMIT_FOR_CONSTANT)) {
+      long configLimit = config.getLong(Constant.VM_MAX_ENERGY_LIMIT_FOR_CONSTANT);
+      PARAMETER.maxEnergyLimitForConstant = max(3_000_000L, configLimit);
+    }
+
     if (config.hasPath(Constant.NODE_HTTP_FULLNODE_ENABLE)) {
       PARAMETER.fullNodeHttpEnable = config.getBoolean(Constant.NODE_HTTP_FULLNODE_ENABLE);
     }
 
     if (config.hasPath(Constant.NODE_HTTP_SOLIDITY_ENABLE)) {
       PARAMETER.solidityNodeHttpEnable = config.getBoolean(Constant.NODE_HTTP_SOLIDITY_ENABLE);
+    }
+
+    if (config.hasPath(Constant.NODE_JSONRPC_HTTP_FULLNODE_ENABLE)) {
+      PARAMETER.jsonRpcHttpFullNodeEnable =
+          config.getBoolean(Constant.NODE_JSONRPC_HTTP_FULLNODE_ENABLE);
+    }
+
+    if (config.hasPath(Constant.NODE_JSONRPC_HTTP_SOLIDITY_ENABLE)) {
+      PARAMETER.jsonRpcHttpSolidityNodeEnable =
+          config.getBoolean(Constant.NODE_JSONRPC_HTTP_SOLIDITY_ENABLE);
+    }
+
+    if (config.hasPath(Constant.NODE_JSONRPC_HTTP_PBFT_ENABLE)) {
+      PARAMETER.jsonRpcHttpPBFTNodeEnable =
+          config.getBoolean(Constant.NODE_JSONRPC_HTTP_PBFT_ENABLE);
     }
 
     if (config.hasPath(Constant.VM_MIN_TIME_RATIO)) {
@@ -344,6 +374,7 @@ public class Args extends CommonParameter {
                 .filter(StringUtils::isNotEmpty)
                 .orElse(Storage.getTransactionHistorySwitchFromConfig(config)));
 
+    PARAMETER.storage.setDefaultDbOptions(config);
     PARAMETER.storage.setPropertyMapFromConfig(config);
 
     PARAMETER.seedNode = new SeedNode();
@@ -449,6 +480,18 @@ public class Args extends CommonParameter {
     PARAMETER.pBFTHttpPort =
         config.hasPath(Constant.NODE_HTTP_PBFT_PORT)
             ? config.getInt(Constant.NODE_HTTP_PBFT_PORT) : 8092;
+
+    PARAMETER.jsonRpcHttpFullNodePort =
+        config.hasPath(Constant.NODE_JSONRPC_HTTP_FULLNODE_PORT)
+            ? config.getInt(Constant.NODE_JSONRPC_HTTP_FULLNODE_PORT) : 8545;
+
+    PARAMETER.jsonRpcHttpSolidityPort =
+        config.hasPath(Constant.NODE_JSONRPC_HTTP_SOLIDITY_PORT)
+            ? config.getInt(Constant.NODE_JSONRPC_HTTP_SOLIDITY_PORT) : 8555;
+
+    PARAMETER.jsonRpcHttpPBFTPort =
+        config.hasPath(Constant.NODE_JSONRPC_HTTP_PBFT_PORT)
+            ? config.getInt(Constant.NODE_JSONRPC_HTTP_PBFT_PORT) : 8565;
 
     PARAMETER.rpcThreadNum =
         config.hasPath(Constant.NODE_RPC_THREAD) ? config.getInt(Constant.NODE_RPC_THREAD)
@@ -609,6 +652,9 @@ public class Args extends CommonParameter {
     PARAMETER.minEffectiveConnection = config.hasPath(Constant.NODE_RPC_MIN_EFFECTIVE_CONNECTION)
         ? config.getInt(Constant.NODE_RPC_MIN_EFFECTIVE_CONNECTION) : 1;
 
+    PARAMETER.trxCacheEnable = config.hasPath(Constant.NODE_RPC_TRX_CACHE_ENABLE)
+            && config.getBoolean(Constant.NODE_RPC_TRX_CACHE_ENABLE);
+
     PARAMETER.blockNumForEnergyLimit = config.hasPath(Constant.ENERGY_LIMIT_BLOCK_NUM)
         ? config.getInt(Constant.ENERGY_LIMIT_BLOCK_NUM) : 4727890L;
 
@@ -708,17 +754,21 @@ public class Args extends CommonParameter {
       //  INSTANCE.agreeNodeCount = MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
     }
 
-    PARAMETER.allowTvmStake =
-            config.hasPath(Constant.COMMITTEE_ALLOW_TVM_STAKE) ? config
-                    .getInt(Constant.COMMITTEE_ALLOW_TVM_STAKE) : 0;
-
-    PARAMETER.allowTvmAssetIssue =
-            config.hasPath(Constant.COMMITTEE_ALLOW_TVM_ASSETISSUE) ? config
-                    .getInt(Constant.COMMITTEE_ALLOW_TVM_ASSETISSUE) : 0;
-
     PARAMETER.allowTvmFreeze =
             config.hasPath(Constant.COMMITTEE_ALLOW_TVM_FREEZE) ? config
                     .getInt(Constant.COMMITTEE_ALLOW_TVM_FREEZE) : 0;
+
+    PARAMETER.allowTvmVote =
+        config.hasPath(Constant.COMMITTEE_ALLOW_TVM_VOTE) ? config
+            .getInt(Constant.COMMITTEE_ALLOW_TVM_VOTE) : 0;
+
+    PARAMETER.allowTvmLondon =
+        config.hasPath(Constant.COMMITTEE_ALLOW_TVM_LONDON) ? config
+            .getInt(Constant.COMMITTEE_ALLOW_TVM_LONDON) : 0;
+
+    PARAMETER.allowTvmCompatibleEvm =
+        config.hasPath(Constant.COMMITTEE_ALLOW_TVM_COMPATIBLE_EVM) ? config
+            .getInt(Constant.COMMITTEE_ALLOW_TVM_COMPATIBLE_EVM) : 0;
 
     initBackupProperty(config);
     if (Constant.ROCKSDB.equals(CommonParameter
@@ -760,6 +810,16 @@ public class Args extends CommonParameter {
         .getBoolean(Constant.OPEN_PRINT_LOG);
     PARAMETER.openTransactionSort = config.hasPath(Constant.OPEN_TRANSACTION_SORT) && config
         .getBoolean(Constant.OPEN_TRANSACTION_SORT);
+
+    PARAMETER.allowAccountAssetOptimization = config
+            .hasPath(Constant.ALLOW_ACCOUNT_ASSET_OPTIMIZATION) ? config
+            .getInt(Constant.ALLOW_ACCOUNT_ASSET_OPTIMIZATION) : 0;
+
+    PARAMETER.disabledApiList =
+        config.hasPath(Constant.NODE_DISABLED_API_LIST)
+            ? config.getStringList(Constant.NODE_DISABLED_API_LIST)
+            .stream().map(String::toLowerCase).collect(Collectors.toList())
+            : Collections.emptyList();
 
     logConfig();
   }
@@ -904,6 +964,21 @@ public class Args extends CommonParameter {
 
     String topic = triggerObject.get("topic").unwrapped().toString();
     triggerConfig.setTopic(topic);
+
+    if (triggerObject.containsKey("redundancy")) {
+      String redundancy = triggerObject.get("redundancy").unwrapped().toString();
+      triggerConfig.setRedundancy("true".equalsIgnoreCase(redundancy));
+    }
+
+    if (triggerObject.containsKey("ethCompatible")) {
+      String ethCompatible = triggerObject.get("ethCompatible").unwrapped().toString();
+      triggerConfig.setEthCompatible("true".equalsIgnoreCase(ethCompatible));
+    }
+
+    if (triggerObject.containsKey("solidified")) {
+      String solidified = triggerObject.get("solidified").unwrapped().toString();
+      triggerConfig.setSolidified("true".equalsIgnoreCase(solidified));
+    }
 
     return triggerConfig;
   }

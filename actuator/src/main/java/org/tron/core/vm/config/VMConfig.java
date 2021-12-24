@@ -1,34 +1,12 @@
-/*
- * Copyright (c) [2016] [ <ether.camp> ]
- * This file is part of the ethereumJ library.
- *
- * The ethereumJ library is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * The ethereumJ library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with the ethereumJ library. If not, see <http://www.gnu.org/licenses/>.
- */
 package org.tron.core.vm.config;
 
-
-import static org.tron.common.parameter.CommonParameter.ENERGY_LIMIT_HARD_FORK;
-
 import lombok.Setter;
+import org.tron.common.parameter.CommonParameter;
 
 /**
  * For developer only
  */
 public class VMConfig {
-
-  //1000 TRX
-  //public static final int MAX_FEE_LIMIT = 1_000_000_000;
 
   private static boolean vmTraceCompressed = false;
 
@@ -49,13 +27,13 @@ public class VMConfig {
 
   private static boolean ALLOW_TVM_FREEZE = false;
 
-  private static boolean ALLOW_TVM_ASSET_ISSUE = false;
+  private static boolean ALLOW_TVM_VOTE = false;
+
+  private static boolean ALLOW_TVM_LONDON = false;
+
+  private static boolean ALLOW_TVM_COMPATIBLE_EVM = false;
 
   private VMConfig() {
-  }
-
-  public static VMConfig getInstance() {
-    return SystemPropertiesInstance.INSTANCE;
   }
 
   public static boolean vmTrace() {
@@ -67,7 +45,7 @@ public class VMConfig {
   }
 
   public static void initVmHardFork(boolean pass) {
-    ENERGY_LIMIT_HARD_FORK = pass;
+    CommonParameter.ENERGY_LIMIT_HARD_FORK = pass;
   }
 
   public static void initAllowMultiSign(long allow) {
@@ -94,18 +72,24 @@ public class VMConfig {
     ALLOW_TVM_ISTANBUL = allow == 1;
   }
 
-  public static void initAllowTvmStake(long value) {}
-
   public static void initAllowTvmFreeze(long allow) {
     ALLOW_TVM_FREEZE = allow == 1;
   }
 
-  public static void initAllowTvmAssetIssue(long allow) {
-    ALLOW_TVM_ASSET_ISSUE = allow == 1;
+  public static void initAllowTvmVote(long allow) {
+    ALLOW_TVM_VOTE = allow == 1;
+  }
+
+  public static void initAllowTvmLondon(long allow) {
+    ALLOW_TVM_LONDON = allow == 1;
+  }
+
+  public static void initAllowTvmCompatibleEvm(long allow) {
+    ALLOW_TVM_COMPATIBLE_EVM = allow == 1;
   }
 
   public static boolean getEnergyLimitHardFork() {
-    return ENERGY_LIMIT_HARD_FORK;
+    return CommonParameter.ENERGY_LIMIT_HARD_FORK;
   }
 
   public static boolean allowTvmTransferTrc10() {
@@ -128,18 +112,23 @@ public class VMConfig {
     return ALLOW_SHIELDED_TRC20_TRANSACTION;
   }
 
-  public static boolean allowTvmIstanbul() {return ALLOW_TVM_ISTANBUL; }
+  public static boolean allowTvmIstanbul() {
+    return ALLOW_TVM_ISTANBUL;
+  }
 
   public static boolean allowTvmFreeze() {
     return ALLOW_TVM_FREEZE;
   }
 
-  public static boolean allowTvmAssetIssue() {
-    return ALLOW_TVM_ASSET_ISSUE;
+  public static boolean allowTvmVote() {
+    return ALLOW_TVM_VOTE;
   }
 
-  private static class SystemPropertiesInstance {
+  public static boolean allowTvmLondon() {
+    return ALLOW_TVM_LONDON;
+  }
 
-    private static final VMConfig INSTANCE = new VMConfig();
+  public static boolean allowTvmCompatibleEvm() {
+    return ALLOW_TVM_COMPATIBLE_EVM;
   }
 }

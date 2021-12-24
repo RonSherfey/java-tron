@@ -5,8 +5,8 @@ import io.grpc.ManagedChannelBuilder;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
-import org.spongycastle.util.encoders.Hex;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeSuite;
@@ -209,7 +209,7 @@ public class TriggerConstant003 {
             "testPayable()", "#", false,
             1L, 1000000000, "0", 0, contractExcAddress, contractExcKey, blockingStubFull);
     transaction = transactionExtention.getTransaction();
-
+    System.out.println(transactionExtention.toString());
     result = transactionExtention.getConstantResult(0).toByteArray();
     System.out.println("message:" + transaction.getRet(0).getRet());
     System.out.println(":" + ByteArray
@@ -219,11 +219,7 @@ public class TriggerConstant003 {
     Assert.assertEquals(1, ByteArray.toLong(ByteArray
         .fromHexString(Hex
             .toHexString(result))));
-    Assert.assertEquals("constant cannot set call value or call token value.",
-        ByteArray
-            .toStr(transactionExtention.getResult().getMessage().toByteArray()));
-    Assert.assertEquals("FAILED", transaction.getRet(0).getRet().toString());
-
+    Assert.assertEquals("SUCESS", transaction.getRet(0).getRet().toString());
 
   }
 

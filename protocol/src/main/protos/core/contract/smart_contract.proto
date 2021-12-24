@@ -18,6 +18,7 @@ message SmartContract {
         Event = 3;
         Fallback = 4;
         Receive = 5;
+        Error = 6;
       }
       message Param {
         bool indexed = 1;
@@ -54,6 +55,7 @@ message SmartContract {
   int64 origin_energy_limit = 8;
   bytes code_hash = 9;
   bytes trx_hash = 10;
+  int32 version = 11;
 }
 
 message CreateSmartContract {

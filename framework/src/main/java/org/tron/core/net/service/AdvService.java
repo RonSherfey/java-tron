@@ -6,6 +6,8 @@ import static org.tron.core.config.Parameter.NetConstants.MSG_CACHE_DURATION_IN_
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -83,7 +85,7 @@ public class AdvService {
       try {
         consumerInvToSpread();
       } catch (Exception exception) {
-        logger.error("Spread thread error.", exception.getMessage());
+        logger.error("Spread thread error. {}", exception.getMessage());
       }
     }, 100, 30, TimeUnit.MILLISECONDS);
 
@@ -91,7 +93,7 @@ public class AdvService {
       try {
         consumerInvToFetch();
       } catch (Exception exception) {
-        logger.error("Fetch thread error.", exception.getMessage());
+        logger.error("Fetch thread error. {}", exception.getMessage());
       }
     }, 100, 30, TimeUnit.MILLISECONDS);
   }
@@ -139,6 +141,40 @@ public class AdvService {
     } else {
       return blockCache.getIfPresent(item);
     }
+  }
+
+  public int fastBroadcastTransaction(TransactionMessage msg) {
+
+    List<PeerConnection> peers = tronNetDelegate.getActivePeer().stream()
+            .filter(peer -> !peer.isNeedSyncFromPeer() && !peer.isNeedSyncFromUs())
+            .collect(Collectors.toList());
+
+    if (peers.size() == 0) {
+      logger.warn("Broadcast transaction {} failed, no connection.", msg.getMessageId());
+      return 0;
+    }
+
+    Item item = new Item(msg.getMessageId(), InventoryType.TRX);
+    trxCount.add();
+    trxCache.put(item, new TransactionMessage(msg.getTransactionCapsule().getInstance()));
+
+    List<Sha256Hash> list = new ArrayList<>();
+    list.add(msg.getMessageId());
+    InventoryMessage inventoryMessage = new InventoryMessage(list, InventoryType.TRX);
+
+    int peersCount = 0;
+    for (PeerConnection peer: peers) {
+      if (peer.getAdvInvReceive().getIfPresent(item) == null
+              && peer.getAdvInvSpread().getIfPresent(item) == null) {
+        peersCount++;
+        peer.getAdvInvSpread().put(item, Time.getCurrentMillis());
+        peer.fastSend(inventoryMessage);
+      }
+    }
+    if (peersCount == 0) {
+      logger.warn("Broadcast transaction {} failed, no peers.", msg.getMessageId());
+    }
+    return peersCount;
   }
 
   public void broadcast(Message msg) {
